@@ -1,55 +1,59 @@
-def is_in_check(board):
-    size = len(board)  # ขนาดกระดาน
-    king_pos = None
+def can_attack(piece, position, king_pos, board):
+    """
+    ตรวจสอบว่าตัวหมากสามารถโจมตี King ได้หรือไม่
+    """
+    directions = {
+        'P': [(-1, -1), (-1, 1)],
+        'B': [(-1, -1), (-1, 1), (1, -1), (1, 1)],
+        'R': [(0, -1), (0, 1), (-1, 0), (1, 0)],
+        'Q': [(-1, -1), (-1, 1), (1, -1), (1, 1), (0, -1), (0, 1), (-1, 0), (1, 0)]
+    }
 
-    # ค้นหาตำแหน่ง King
-    for i in range(size):
-        for j in range(size):
-            if board[i][j] == 'K':
+    if piece not in directions:
+        return False
+
+    for dr, dc in directions[piece]:
+        r, c = position
+        if piece == 'P':
+            r += dr
+            c += dc
+            if (r, c) == king_pos:
+                return True
+            continue
+
+        while 0 <= r < len(board) and 0 <= c < len(board[r]):
+            r += dr
+            c += dc
+            if (r, c) == king_pos:
+                return True
+            if 0 <= r < len(board) and 0 <= c < len(board[r]) and board[r][c] != '.':
+                break
+
+    return False
+
+
+def checkmate(board):
+    """
+    ตรวจสอบว่ามีตัวหมากใดสามารถโจมตี King ได้หรือไม่
+    """
+
+    king_pos = None
+    for i, row in enumerate(board):
+        for j, cell in enumerate(row):
+            if cell == 'K':
                 king_pos = (i, j)
                 break
         if king_pos:
             break
 
     if not king_pos:
-        return "Error: No King on the board."
+        return "Fail"
 
-    king_row, king_col = king_pos
 
-    # ตรวจสอบ Rook และ Queen (แนวตรง)
-    for direction in [(0, 1), (1, 0), (0, -1), (-1, 0)]:  # ขวา, ลง, ซ้าย, ขึ้น
-        row, col = king_row, king_col
-        while 0 <= row < size and 0 <= col < size:
-            row += direction[0]
-            col += direction[1]
-            if row < 0 or row >= size or col < 0 or col >= size:
-                break
-            if board[row][col] == '.':
-                continue
-            if board[row][col] in ('R', 'Q'):
-                return "Success"
-            else:
-                break
-
-    # ตรวจสอบ Bishop และ Queen (แนวทแยง)
-    for direction in [(1, 1), (1, -1), (-1, 1), (-1, -1)]:  # ทิศทางทแยงทั้ง 4
-        row, col = king_row, king_col
-        while 0 <= row < size and 0 <= col < size:
-            row += direction[0]
-            col += direction[1]
-            if row < 0 or row >= size or col < 0 or col >= size:
-                break
-            if board[row][col] == '.':
-                continue
-            if board[row][col] in ('B', 'Q'):
-                return "Success"
-            else:
-                break
-
-    # ตรวจสอบ Pawn (โจมตีเฉียงข้างหน้า)
-    for offset in [(-1, -1), (-1, 1)]:  # เฉียงซ้ายบน, เฉียงขวาบน
-        row, col = king_row + offset[0], king_col + offset[1]
-        if 0 <= row < size and 0 <= col < size and board[row][col] == 'P':
-            return "Success"
+    for i, row in enumerate(board):
+        for j, cell in enumerate(row):
+            if cell in "PBRQ":
+                if can_attack(cell, (i, j), king_pos, board):
+                    return "Success"
 
     return "Fail"
